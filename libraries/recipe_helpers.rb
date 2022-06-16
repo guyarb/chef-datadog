@@ -7,22 +7,30 @@ class Chef
         datadog-iot-agent
       ].freeze
 
-      def agent_version(node)
-        dd_agent_version = node['datadog']['agent_version']
-        if dd_agent_version.respond_to?(:each_pair)
+      def compute_version(node, attribute)
+        dd_version = node['datadog'][attribute]
+        if dd_version.respond_to?(:each_pair)
           platform_family = node['platform_family']
           # Unless explicitly listed, treat fedora and amazon as rhel
-          if !dd_agent_version.include?(platform_family) && ['fedora', 'amazon'].include?(platform_family)
+          if !dd_version.include?(platform_family) && ['fedora', 'amazon'].include?(platform_family)
             platform_family = 'rhel'
           end
-          dd_agent_version = dd_agent_version[platform_family]
+          dd_version = dd_version[platform_family]
         end
-        if !dd_agent_version.nil? && dd_agent_version.match(/^[0-9]+\.[0-9]+\.[0-9]+((?:~|-)[^0-9\s-]+[^-\s]*)?$/)
+        if !dd_version.nil? && dd_version.match(/^[0-9]+\.[0-9]+\.[0-9]+((?:~|-)[^0-9\s-]+[^-\s]*)?$/)
           if %w[debian amazon fedora rhel suse].include?(node['platform_family'])
-            dd_agent_version = '1:' + dd_agent_version + '-1'
+            dd_version = '1:' + dd_version + '-1'
           end
         end
-        dd_agent_version
+        dd_version
+      end
+
+      def agent_version(node)
+        compute_version(node, 'agent_version')
+      end
+
+      def fips_proxy_version(node)
+        compute_version(node, 'fips_proxy_version')
       end
 
       def agent_major_version(node)
